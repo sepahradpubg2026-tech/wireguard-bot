@@ -301,7 +301,7 @@ def receive_receipt(message):
         "✅ فیش شما دریافت شد.\n\n"
         "⏳ منتظر بررسی و تأیید پرداخت باشید."
     )
-    @bot.callback_query_handler(
+@bot.callback_query_handler(
     func=lambda call:
     call.data.startswith("approve_")
 )
