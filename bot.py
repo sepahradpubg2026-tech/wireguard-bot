@@ -463,14 +463,8 @@ def telegram_webhook(secret):
         update = telebot.types.Update.de_json(
             request.data.decode("utf-8")
         )
-
-        threading.Thread(
-            target=bot.process_new_updates,
-            args=([update],),
-            daemon=True
-        ).start()
-
-        return "OK", 200
+bot.process_new_updates([update])
+return "OK", 200
 
     except Exception as e:
         print("Webhook error:", e)
