@@ -74,7 +74,7 @@ def is_member(user_id):
     except Exception as e:
         print("Join check error:", e)
         return False
-       def send_join_message(chat_id):
+def send_join_message(chat_id):
     bot.send_message(
         chat_id,
         "🔒 برای استفاده از ربات ابتدا باید "
