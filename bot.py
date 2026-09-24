@@ -92,8 +92,10 @@ def start(message):
         "START received:",
         message.from_user.id
     )
-
-    if not is_member(me
+  
+    if not is_member(message.from_user.id):
+        send_join_message(message.chat.id)
+        return     
     bot.send_message(
         message.chat.id,
         "سلام 👋\n\n"
