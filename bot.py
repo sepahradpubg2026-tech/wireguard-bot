@@ -463,8 +463,12 @@ def telegram_webhook(secret):
         update = telebot.types.Update.de_json(
             request.data.decode("utf-8")
         )
+        
         print("UPDATE RECEIVED:", update)
+        print("UPDATE RECEIVED:", update)
+        print("BEFORE PROCESS")
         bot.process_new_updates([update])
+        print("AFTER PROCESS")
        
         return "OK", 200
         
