@@ -7,7 +7,6 @@ from flask import Flask, request
 
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-
 CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
 CHANNEL_LINK = os.getenv("CHANNEL_LINK", "")
 
@@ -30,38 +29,33 @@ pending_orders = {}
 
 
 def main_menu():
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-
-    keyboard.row(
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row(
         "🟢 وایرگارد گیمینگ 🎮",
         "🟢 پشتیبانی 🎧"
     )
-
-    keyboard.row(
-        "❓ سؤالات متداول"
-    )
-
-    return keyboard
+    kb.row("❓ سؤالات متداول")
+    return kb
 
 
 def join_menu():
-    keyboard = types.InlineKeyboardMarkup()
+    kb = types.InlineKeyboardMarkup()
 
-    keyboard.add(
+    kb.add(
         types.InlineKeyboardButton(
             "📢 عضویت در کانال",
             url=CHANNEL_LINK
         )
     )
 
-    keyboard.add(
+    kb.add(
         types.InlineKeyboardButton(
             "✅ عضو شدم",
             callback_data="check_join"
         )
     )
 
-    return keyboard
+    return kb
 
 
 def is_member(user_id):
@@ -80,7 +74,7 @@ def is_member(user_id):
     except Exception as e:
         print("Join check error:", e)
         return False
-        def send_join_message(chat_id):
+       def send_join_message(chat_id):
     bot.send_message(
         chat_id,
         "🔒 برای استفاده از ربات ابتدا باید "
@@ -95,7 +89,7 @@ def is_member(user_id):
 @bot.message_handler(commands=["start"])
 def start(message):
     print(
-        "START received from:",
+        "START received:",
         message.from_user.id
     )
 
@@ -146,16 +140,16 @@ def gaming(message):
         send_join_message(message.chat.id)
         return
 
-    keyboard = types.InlineKeyboardMarkup()
+    kb = types.InlineKeyboardMarkup()
 
-    keyboard.add(
+    kb.add(
         types.InlineKeyboardButton(
             "🎮 ۱۰ گیگ — ۱۰۰,۰۰۰ تومان",
             callback_data="plan_10"
         )
     )
 
-    keyboard.add(
+    kb.add(
         types.InlineKeyboardButton(
             "🎮 ۲۰ گیگ — ۲۰۰,۰۰۰ تومان",
             callback_data="plan_20"
@@ -166,7 +160,7 @@ def gaming(message):
         message.chat.id,
         "🎮 پلن‌های WireGuard گیمینگ\n\n"
         "یکی از پلن‌های زیر را انتخاب کنید:",
-        reply_markup=keyboard
+        reply_markup=kb
     )
 
 
@@ -176,9 +170,9 @@ def show_payment(chat_id, user_id, plan, price):
         "price": price
     }
 
-    keyboard = types.InlineKeyboardMarkup()
+    kb = types.InlineKeyboardMarkup()
 
-    keyboard.add(
+    kb.add(
         types.InlineKeyboardButton(
             "📸 ارسال فیش پرداخت",
             callback_data="send_receipt"
@@ -193,9 +187,9 @@ def show_payment(chat_id, user_id, plan, price):
         "پس از پرداخت، روی دکمه زیر بزنید "
         "و عکس فیش را ارسال کنید.",
         parse_mode="Markdown",
-        reply_markup=keyboard
+        reply_markup=kb
     )
-    @bot.callback_query_handler(
+@bot.callback_query_handler(
     func=lambda call: call.data == "plan_10"
 )
 def plan_10(call):
@@ -239,8 +233,8 @@ def send_receipt(call):
 
     bot.send_message(
         call.message.chat.id,
-        f"📸 لطفاً عکس فیش پرداخت پلن "
-        f"{order['plan']} به مبلغ "
+        f"📸 لطفاً عکس فیش پرداخت "
+        f"پلن {order['plan']} به مبلغ "
         f"{order['price']:,} تومان را همینجا ارسال کنید."
     )
 
@@ -275,9 +269,9 @@ def receive_receipt(message):
         f"🔗 Username: {username}"
     )
 
-    keyboard = types.InlineKeyboardMarkup()
+    kb = types.InlineKeyboardMarkup()
 
-    keyboard.row(
+    kb.row(
         types.InlineKeyboardButton(
             "✅ تأیید پرداخت",
             callback_data=f"approve_{user.id}"
@@ -294,12 +288,11 @@ def receive_receipt(message):
                 admin_id,
                 message.photo[-1].file_id,
                 caption=caption,
-                reply_markup=keyboard
+                reply_markup=kb
             )
         except Exception as e:
             print(
-                f"Error sending receipt to admin "
-                f"{admin_id}:",
+                "Error sending receipt:",
                 e
             )
 
@@ -309,7 +302,8 @@ def receive_receipt(message):
         "⏳ منتظر بررسی و تأیید پرداخت باشید."
     )
     @bot.callback_query_handler(
-    func=lambda call: call.data.startswith("approve_")
+    func=lambda call:
+    call.data.startswith("approve_")
 )
 def approve_payment(call):
     if call.from_user.id not in ADMIN_IDS:
@@ -320,7 +314,9 @@ def approve_payment(call):
         )
         return
 
-    user_id = int(call.data.split("_")[1])
+    user_id = int(
+        call.data.split("_")[1]
+    )
 
     order = pending_orders.get(user_id)
 
@@ -332,7 +328,10 @@ def approve_payment(call):
         price_text = ""
 
     try:
-        with open(CONFIG_FILE, "rb") as file:
+        with open(
+            CONFIG_FILE,
+            "rb"
+        ) as file:
             bot.send_document(
                 user_id,
                 file,
@@ -377,7 +376,8 @@ def approve_payment(call):
 
 
 @bot.callback_query_handler(
-    func=lambda call: call.data.startswith("reject_")
+    func=lambda call:
+    call.data.startswith("reject_")
 )
 def reject_payment(call):
     if call.from_user.id not in ADMIN_IDS:
@@ -388,7 +388,9 @@ def reject_payment(call):
         )
         return
 
-    user_id = int(call.data.split("_")[1])
+    user_id = int(
+        call.data.split("_")[1]
+    )
 
     bot.send_message(
         user_id,
@@ -475,7 +477,7 @@ def telegram_webhook(secret):
         return "Bad Request", 400
 
 
-def setup_webhook():
+def set_webhook():
     if not BOT_TOKEN:
         print("ERROR: BOT_TOKEN is missing")
         return
@@ -488,17 +490,16 @@ def setup_webhook():
         print("ERROR: WEBHOOK_SECRET is missing")
         return
 
-    webhook_target = (
+    webhook_url = (
         f"{WEBHOOK_URL}/webhook/{WEBHOOK_SECRET}"
     )
 
     try:
         bot.remove_webhook()
-
         bot.set_webhook(
-            url=webhook_target
+            url=webhook_url,
+            timeout=30
         )
-
         print("Webhook set successfully")
 
     except Exception as e:
@@ -508,18 +509,8 @@ def setup_webhook():
         )
 
 
-setup_webhook()
-
-
-if __name__ == "__main__":
-    port = int(
-        os.environ.get(
-            "PORT",
-            "10000"
-        )
-    )
-
-    app.run(
-        host="0.0.0.0",
-        port=port
-    )
+threading.Thread(
+    target=set_webhook,
+    daemon=True
+).start()
+    
