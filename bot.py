@@ -85,6 +85,8 @@ def send_join_message(chat_id):
         "3️⃣ سپس روی «عضو شدم» بزنید.",
         reply_markup=join_menu()
     )
+    
+print("START HANDLER REGISTERED")
 
 @bot.message_handler(commands=["start"])
 def start(message):
