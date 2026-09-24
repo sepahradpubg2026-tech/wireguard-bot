@@ -410,7 +410,7 @@ def reject_payment(call):
         call.id,
         "پرداخت رد شد ❌"
     )
-    @bot.message_handler(
+@bot.message_handler(
     func=lambda message:
     message.text == "🟢 پشتیبانی 🎧"
 )
