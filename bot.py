@@ -1,12 +1,15 @@
 import os
 import threading
+
 import telebot
 from telebot import types
 from flask import Flask, request
 
-BOT_TOKEN = os.getenv("8708614197:AAFwkodpVg5onEWwdZSlxwtVgCb1ALYZNpA", "")
-CHANNEL_ID = int(os.getenv("-1003920874331", "0"))
-CHANNEL_LINK = os.getenv("https://t.me/IRAN_IAN_CHEAT", "")
+
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+
+CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
+CHANNEL_LINK = os.getenv("CHANNEL_LINK", "")
 
 ADMIN_IDS = [
     int(x.strip())
@@ -21,37 +24,44 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL", "").rstrip("/")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
 
 bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
+
 pending_orders = {}
 
 
 def main_menu():
-    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.row(
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+    keyboard.row(
         "🟢 وایرگارد گیمینگ 🎮",
         "🟢 پشتیبانی 🎧"
     )
-    kb.row("❓ سؤالات متداول")
-    return kb
+
+    keyboard.row(
+        "❓ سؤالات متداول"
+    )
+
+    return keyboard
 
 
 def join_menu():
-    kb = types.InlineKeyboardMarkup()
+    keyboard = types.InlineKeyboardMarkup()
 
-    kb.add(
+    keyboard.add(
         types.InlineKeyboardButton(
             "📢 عضویت در کانال",
             url=CHANNEL_LINK
         )
     )
 
-    kb.add(
+    keyboard.add(
         types.InlineKeyboardButton(
             "✅ عضو شدم",
             callback_data="check_join"
         )
     )
 
-    return kb
+    return keyboard
 
 
 def is_member(user_id):
@@ -73,7 +83,8 @@ def is_member(user_id):
         def send_join_message(chat_id):
     bot.send_message(
         chat_id,
-        "🔒 برای استفاده از ربات ابتدا باید در کانال ما عضو شوید.\n\n"
+        "🔒 برای استفاده از ربات ابتدا باید "
+        "در کانال ما عضو شوید.\n\n"
         "1️⃣ روی «عضویت در کانال» بزنید.\n"
         "2️⃣ عضو کانال شوید.\n"
         "3️⃣ سپس روی «عضو شدم» بزنید.",
@@ -117,6 +128,7 @@ def check_join(call):
             "حالا می‌توانید از ربات استفاده کنید.",
             reply_markup=main_menu()
         )
+
     else:
         bot.answer_callback_query(
             call.id,
@@ -126,23 +138,24 @@ def check_join(call):
 
 
 @bot.message_handler(
-    func=lambda m: m.text == "🟢 وایرگارد گیمینگ 🎮"
+    func=lambda message:
+    message.text == "🟢 وایرگارد گیمینگ 🎮"
 )
 def gaming(message):
     if not is_member(message.from_user.id):
         send_join_message(message.chat.id)
         return
 
-    kb = types.InlineKeyboardMarkup()
+    keyboard = types.InlineKeyboardMarkup()
 
-    kb.add(
+    keyboard.add(
         types.InlineKeyboardButton(
             "🎮 ۱۰ گیگ — ۱۰۰,۰۰۰ تومان",
             callback_data="plan_10"
         )
     )
 
-    kb.add(
+    keyboard.add(
         types.InlineKeyboardButton(
             "🎮 ۲۰ گیگ — ۲۰۰,۰۰۰ تومان",
             callback_data="plan_20"
@@ -153,7 +166,7 @@ def gaming(message):
         message.chat.id,
         "🎮 پلن‌های WireGuard گیمینگ\n\n"
         "یکی از پلن‌های زیر را انتخاب کنید:",
-        reply_markup=kb
+        reply_markup=keyboard
     )
 
 
@@ -163,9 +176,9 @@ def show_payment(chat_id, user_id, plan, price):
         "price": price
     }
 
-    kb = types.InlineKeyboardMarkup()
+    keyboard = types.InlineKeyboardMarkup()
 
-    kb.add(
+    keyboard.add(
         types.InlineKeyboardButton(
             "📸 ارسال فیش پرداخت",
             callback_data="send_receipt"
@@ -176,9 +189,14 @@ def show_payment(chat_id, user_id, plan, price):
         chat_id,
         f"📦 پلن انتخابی: {plan}\n\n"
         f"💰 مبلغ: {price:,} تومان\n\n"
-        f"💳
+        f"💳 شماره کارت:\n`{CARD_NUMBER}`\n\n"
+        "پس از پرداخت، روی دکمه زیر بزنید "
+        "و عکس فیش را ارسال کنید.",
+        parse_mode="Markdown",
+        reply_markup=keyboard
+    )
     @bot.callback_query_handler(
-    func=lambda c: c.data == "plan_10"
+    func=lambda call: call.data == "plan_10"
 )
 def plan_10(call):
     show_payment(
@@ -187,11 +205,12 @@ def plan_10(call):
         "۱۰ گیگ",
         100000
     )
+
     bot.answer_callback_query(call.id)
 
 
 @bot.callback_query_handler(
-    func=lambda c: c.data == "plan_20"
+    func=lambda call: call.data == "plan_20"
 )
 def plan_20(call):
     show_payment(
@@ -200,16 +219,15 @@ def plan_20(call):
         "۲۰ گیگ",
         200000
     )
+
     bot.answer_callback_query(call.id)
 
 
 @bot.callback_query_handler(
-    func=lambda c: c.data == "send_receipt"
+    func=lambda call: call.data == "send_receipt"
 )
 def send_receipt(call):
-    order = pending_orders.get(
-        call.from_user.id
-    )
+    order = pending_orders.get(call.from_user.id)
 
     if not order:
         bot.answer_callback_query(
@@ -237,7 +255,8 @@ def receive_receipt(message):
     if not order:
         bot.send_message(
             message.chat.id,
-            "❌ ابتدا از بخش «وایرگارد گیمینگ» یک پلن انتخاب کنید."
+            "❌ ابتدا از بخش "
+            "«وایرگارد گیمینگ» یک پلن انتخاب کنید."
         )
         return
 
@@ -256,17 +275,109 @@ def receive_receipt(message):
         f"🔗 Username: {username}"
     )
 
-    kb = types.InlineKeyboardMarkup()
+    keyboard = types.InlineKeyboardMarkup()
 
-    kb.row(
+    keyboard.row(
         types.InlineKeyboardButton(
             "✅ تأیید پرداخت",
             callback_data=f"approve_{user.id}"
         ),
         types.InlineKeyboardButton(
-            "❌ رد
+            "❌ رد پرداخت",
+            callback_data=f"reject_{user.id}"
+        )
+    )
+
+    for admin_id in ADMIN_IDS:
+        try:
+            bot.send_photo(
+                admin_id,
+                message.photo[-1].file_id,
+                caption=caption,
+                reply_markup=keyboard
+            )
+        except Exception as e:
+            print(
+                f"Error sending receipt to admin "
+                f"{admin_id}:",
+                e
+            )
+
+    bot.send_message(
+        message.chat.id,
+        "✅ فیش شما دریافت شد.\n\n"
+        "⏳ منتظر بررسی و تأیید پرداخت باشید."
+    )
     @bot.callback_query_handler(
-    func=lambda c: c.data.startswith("reject_")
+    func=lambda call: call.data.startswith("approve_")
+)
+def approve_payment(call):
+    if call.from_user.id not in ADMIN_IDS:
+        bot.answer_callback_query(
+            call.id,
+            "❌ شما دسترسی مدیریت ندارید.",
+            show_alert=True
+        )
+        return
+
+    user_id = int(call.data.split("_")[1])
+
+    order = pending_orders.get(user_id)
+
+    if order:
+        plan_text = order["plan"]
+        price_text = f"{order['price']:,}"
+    else:
+        plan_text = "WireGuard"
+        price_text = ""
+
+    try:
+        with open(CONFIG_FILE, "rb") as file:
+            bot.send_document(
+                user_id,
+                file,
+                caption=(
+                    "✅ پرداخت شما تأیید شد!\n\n"
+                    f"📦 پلن: {plan_text}\n"
+                    f"💰 مبلغ: {price_text} تومان\n\n"
+                    "📥 فایل WireGuard شما:"
+                )
+            )
+
+    except FileNotFoundError:
+        bot.answer_callback_query(
+            call.id,
+            "❌ فایل TDM.conf پیدا نشد.",
+            show_alert=True
+        )
+        print("ERROR: TDM.conf not found")
+        return
+
+    except Exception as e:
+        bot.answer_callback_query(
+            call.id,
+            "❌ ارسال فایل انجام نشد.",
+            show_alert=True
+        )
+        print("ERROR sending config:", e)
+        return
+
+    pending_orders.pop(user_id, None)
+
+    bot.edit_message_reply_markup(
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=None
+    )
+
+    bot.answer_callback_query(
+        call.id,
+        "پرداخت تأیید شد و فایل ارسال شد ✅"
+    )
+
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith("reject_")
 )
 def reject_payment(call):
     if call.from_user.id not in ADMIN_IDS:
@@ -297,10 +408,9 @@ def reject_payment(call):
         call.id,
         "پرداخت رد شد ❌"
     )
-
-
-@bot.message_handler(
-    func=lambda m: m.text == "🟢 پشتیبانی 🎧"
+    @bot.message_handler(
+    func=lambda message:
+    message.text == "🟢 پشتیبانی 🎧"
 )
 def support(message):
     if not is_member(message.from_user.id):
@@ -315,7 +425,8 @@ def support(message):
 
 
 @bot.message_handler(
-    func=lambda m: m.text == "❓ سؤالات متداول"
+    func=lambda message:
+    message.text == "❓ سؤالات متداول"
 )
 def faq(message):
     if not is_member(message.from_user.id):
@@ -334,13 +445,6 @@ def faq(message):
         "🔹 اگر کانفیگ کار نکرد چه کنم؟\n"
         "از بخش 🟢 پشتیبانی 🎧 با پشتیبانی در ارتباط باشید."
     )
-
-
-# =========================
-# Flask Webhook
-# =========================
-
-app = Flask(__name__)
 
 
 @app.get("/")
@@ -390,13 +494,18 @@ def setup_webhook():
 
     try:
         bot.remove_webhook()
-        bot.set_webhook(url=webhook_target)
+
+        bot.set_webhook(
+            url=webhook_target
+        )
 
         print("Webhook set successfully")
-        print("Webhook URL:", webhook_target)
 
     except Exception as e:
-        print("ERROR setting webhook:", e)
+        print(
+            "ERROR setting webhook:",
+            e
+        )
 
 
 setup_webhook()
@@ -404,7 +513,10 @@ setup_webhook()
 
 if __name__ == "__main__":
     port = int(
-        os.environ.get("PORT", "10000")
+        os.environ.get(
+            "PORT",
+            "10000"
+        )
     )
 
     app.run(
