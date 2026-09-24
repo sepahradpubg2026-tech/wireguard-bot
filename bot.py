@@ -56,8 +56,7 @@ def join_menu():
     )
 
     return kb
-
-
+    
 def is_member(user_id):
     try:
         member = bot.get_chat_member(
@@ -74,6 +73,8 @@ def is_member(user_id):
     except Exception as e:
         print("Join check error:", e)
         return False
+        
+        
 def send_join_message(chat_id):
     bot.send_message(
         chat_id,
@@ -85,7 +86,6 @@ def send_join_message(chat_id):
         reply_markup=join_menu()
     )
 
-
 @bot.message_handler(commands=["start"])
 def start(message):
     print(
@@ -93,10 +93,7 @@ def start(message):
         message.from_user.id
     )
 
-    if not is_member(message.from_user.id):
-        send_join_message(message.chat.id)
-        return
-
+    if not is_member(me
     bot.send_message(
         message.chat.id,
         "سلام 👋\n\n"
